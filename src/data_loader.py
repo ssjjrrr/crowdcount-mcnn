@@ -22,7 +22,7 @@ class ImageDataLoader():
         self.blob_list = {}        
         self.id_list = range(0,self.num_samples)
         if self.pre_load:
-            print 'Pre-loading the data. This may take a while...'
+            print('Pre-loading the data. This may take a while...')
             idx = 0
             for fname in self.data_files:
                 
@@ -30,15 +30,15 @@ class ImageDataLoader():
                 img = img.astype(np.float32, copy=False)
                 ht = img.shape[0]
                 wd = img.shape[1]
-                ht_1 = (ht/4)*4
-                wd_1 = (wd/4)*4
+                ht_1 = int((ht/4)*4)
+                wd_1 = int((wd/4)*4)
                 img = cv2.resize(img,(wd_1,ht_1))
                 img = img.reshape((1,1,img.shape[0],img.shape[1]))
-                den = pd.read_csv(os.path.join(self.gt_path,os.path.splitext(fname)[0] + '.csv'), sep=',',header=None).as_matrix()                        
+                den = pd.read_csv(os.path.join(self.gt_path,os.path.splitext(fname)[0] + '.csv'), sep=',',header=None).values                  
                 den  = den.astype(np.float32, copy=False)
                 if self.gt_downsample:
-                    wd_1 = wd_1/4
-                    ht_1 = ht_1/4
+                    wd_1 = int(wd_1/4)
+                    ht_1 = int(ht_1/4)  
                     den = cv2.resize(den,(wd_1,ht_1))                
                     den = den * ((wd*ht)/(wd_1*ht_1))
                 else:
@@ -53,9 +53,9 @@ class ImageDataLoader():
                 self.blob_list[idx] = blob
                 idx = idx+1
                 if idx % 100 == 0:                    
-                    print 'Loaded ', idx, '/', self.num_samples, 'files'
+                    print('Loaded ', idx, '/', self.num_samples, 'files')
                
-            print 'Completed Loading ', idx, 'files'
+            print('Completed Loading ', idx, 'files')
         
         
     def __iter__(self):
@@ -77,15 +77,15 @@ class ImageDataLoader():
                 img = img.astype(np.float32, copy=False)
                 ht = img.shape[0]
                 wd = img.shape[1]
-                ht_1 = (ht/4)*4
-                wd_1 = (wd/4)*4
+                ht_1 = int((ht/4)*4)
+                wd_1 = int((wd/4)*4)
                 img = cv2.resize(img,(wd_1,ht_1))
                 img = img.reshape((1,1,img.shape[0],img.shape[1]))
-                den = pd.read_csv(os.path.join(self.gt_path,os.path.splitext(fname)[0] + '.csv'), sep=',',header=None).as_matrix()                        
+                den = pd.read_csv(os.path.join(self.gt_path,os.path.splitext(fname)[0] + '.csv'), sep=',',header=None).values                        
                 den  = den.astype(np.float32, copy=False)
                 if self.gt_downsample:
-                    wd_1 = wd_1/4
-                    ht_1 = ht_1/4
+                    wd_1 = int(wd_1/4)
+                    ht_1 = int(ht_1/4)  
                     den = cv2.resize(den,(wd_1,ht_1))                
                     den = den * ((wd*ht)/(wd_1*ht_1))
                 else:
@@ -103,6 +103,41 @@ class ImageDataLoader():
     def get_num_samples(self):
         return self.num_samples
                 
+class NoGTDataLoader():
+    def __init__(self, data_path, shuffle=False, pre_load=False):
+        """
+        No GT processing for testing
+        """
+        self.data_path = data_path
+        self.data_files = [filename for filename in os.listdir(data_path) \
+                           if os.path.isfile(os.path.join(data_path, filename))]
+        self.num_samples = len(self.data_files)
+        self.blob_list = {}        
+        self.id_list = range(0, self.num_samples)
         
+    def __iter__(self):
+
+        files = self.data_files
+        id_list = self.id_list
+       
+        for idx in id_list:
+            fname = files[idx]
+            img = cv2.imread(os.path.join(self.data_path, fname), 0)
+            img = img.astype(np.float32, copy=False)
+            ht = img.shape[0]
+            wd = img.shape[1]
+            ht_1 = int((ht/4)*4)
+            wd_1 = int((wd/4)*4)
+            img = cv2.resize(img, (wd_1, ht_1))
+            img = img.reshape((1, 1, img.shape[0], img.shape[1]))
+
+            blob = {}
+            blob['data'] = img
+            blob['fname'] = fname
+                
+            yield blob
+            
+    def get_num_samples(self):
+        return self.num_samples
             
         
